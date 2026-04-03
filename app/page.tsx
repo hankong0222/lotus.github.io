@@ -1,13 +1,17 @@
 import Header from "@/components/Header"
 import Home from "@/components/Home"
-import About from "@/components/About"import Image from "next/image";
+import About from "@/components/About"
+import Footer from "@/components/Footer"
 
-export default function Home() {
+export default function Page() {
   return (
-   <>
-    <Header />
-    <Home />
-    <About />
-   </>
+    <>
+      <Header />
+      <main>
+        <Home />
+        <About />
+      </main>
+      <Footer />
+    </>
   );
 }

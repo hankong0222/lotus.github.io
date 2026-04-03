@@ -1,26 +1,119 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #08111d;
+  --foreground: #f4f7fb;
+  --muted: #9aa8bb;
+  --card: rgba(12, 19, 34, 0.52);
+  --line: rgba(255, 255, 255, 0.12);
+  --accent: #ff7f50;
+  --accent-deep: #ffc39d;
+  --accent-soft: rgba(255, 166, 121, 0.18);
+  --surface: rgba(255, 255, 255, 0.07);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "Consolas", "SFMono-Regular", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 127, 80, 0.14), transparent 28%),
+    radial-gradient(circle at 85% 18%, rgba(93, 214, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #09111d 0%, #081521 48%, #07101a 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(191, 90, 54, 0.18);
+}
+
+.section-shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.glass-card {
+  background: rgba(255, 251, 244, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 80px rgba(4, 10, 22, 0.24);
+  backdrop-filter: blur(16px);
+}
+
+.section-kicker {
+  color: rgba(255, 210, 171, 0.92);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.section-title {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(248, 249, 252, 0.95);
+}
+
+.section-copy {
+  color: rgba(234, 238, 244, 0.72);
+  line-height: 1.75;
+}
+
+main,
+header,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+.particle-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(180deg, black 45%, transparent 100%);
+}
+
+.section-shell,
+.glass-card {
+  position: relative;
 }
