@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import HandPainter from "@/components/HandPainter";
 import ParticleField from "@/components/ParticleField";
 import "./globals.css";
 
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ParticleField />
+        <HandPainter />
         {children}
       </body>
     </html>

@@ -12,10 +12,9 @@ export default function Home() {
           <div className="glass-card rounded-[2rem] px-6 py-8 md:px-10 md:py-12">
             <p className="section-kicker">Home</p>
             <h1 className="mt-4 max-w-3xl text-[clamp(2.8rem,7vw,6.4rem)] leading-[0.95] font-semibold tracking-[-0.06em]">
-              Hi, I'm <span className="text-[color:var(--accent-deep)]">Lotus</span>
+              Hi, I&apos;m <span className="text-[color:var(--accent-deep)]">Lotus</span>
             </h1>
           </div>
-
         </div>
       </section>
 

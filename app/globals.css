@@ -33,6 +33,8 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
+  isolation: isolate;
   background-image:
     radial-gradient(circle at top left, rgba(255, 127, 80, 0.14), transparent 28%),
     radial-gradient(circle at 85% 18%, rgba(93, 214, 255, 0.12), transparent 22%),
@@ -94,6 +96,46 @@ footer {
   height: 100%;
   z-index: 0;
   pointer-events: none;
+}
+
+.hand-painter-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+.hand-painter-hud {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1rem;
+  background: rgba(7, 14, 25, 0.58);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+}
+
+.hand-painter-kicker {
+  margin: 0;
+  color: rgba(255, 210, 171, 0.92);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.hand-painter-copy {
+  margin: 0.45rem 0 0;
+  color: rgba(244, 247, 251, 0.82);
+  line-height: 1.5;
+  font-size: 0.82rem;
 }
 
 .grain {
