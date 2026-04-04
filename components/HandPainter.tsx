@@ -25,10 +25,16 @@ type HandsResults = {
 };
 
 type ScrollState = {
-  active: boolean;
-  lostFrames: number;
-  scrollVelocity: number;
-  lastPinchCenter: Point | null;
+  pinched: boolean;
+  direction: -1 | 0 | 1;
+};
+
+type DebugState = {
+  pinchSpread: number;
+  deltaY: number;
+  direction: -1 | 0 | 1;
+  pinched: boolean;
+  middleExtended: boolean;
 };
 
 declare global {
@@ -37,52 +43,40 @@ declare global {
       video: HTMLVideoElement,
       options: { onFrame: () => Promise<void>; width: number; height: number }
     ) => { start: () => Promise<void>; stop?: () => void };
+    HAND_CONNECTIONS?: Array<[number, number]>;
     Hands?: new (config: { locateFile: (file: string) => string }) => {
       setOptions: (options: Record<string, number | boolean>) => void;
       onResults: (callback: (results: HandsResults) => void) => void;
       send: (input: { image: HTMLVideoElement }) => Promise<void>;
       close?: () => Promise<void>;
     };
+    drawConnectors?: (
+      ctx: CanvasRenderingContext2D,
+      landmarks: Landmark[],
+      connections: Array<[number, number]>,
+      style?: { color?: string; lineWidth?: number }
+    ) => void;
+    drawLandmarks?: (
+      ctx: CanvasRenderingContext2D,
+      landmarks: Landmark[],
+      style?: { color?: string; lineWidth?: number; radius?: number }
+    ) => void;
   }
 }
 
 const SCRIPT_URLS = [
   "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js",
+  "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js",
   "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js",
 ];
 
 const MAX_SEGMENT_AGE = 3000;
-const PINCH_CENTER_SMOOTHING = 0.12;
-const SCROLL_TRIGGER_DELTA = 1.6;
-const SCROLL_FIXED_STEP = 112;
-const SCROLL_DEADZONE = 3;
-const SCROLL_LOST_FRAMES = 18;
+const SCROLL_SPEED_PER_SECOND = 800;
+const PINCH_CENTER_SMOOTHING = 0.18;
+const SCROLL_START_DELTA = 5;
+const SCROLL_SWITCH_DELTA = 9;
 const PINCH_ENTER_SPREAD = 0.07;
 const PINCH_EXIT_SPREAD = 0.095;
-const HAND_CONNECTIONS: Array<[number, number]> = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [0, 5],
-  [5, 6],
-  [6, 7],
-  [7, 8],
-  [5, 9],
-  [9, 10],
-  [10, 11],
-  [11, 12],
-  [9, 13],
-  [13, 14],
-  [14, 15],
-  [15, 16],
-  [13, 17],
-  [17, 18],
-  [18, 19],
-  [19, 20],
-  [0, 17],
-];
-
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
@@ -122,17 +116,6 @@ function projectLandmark(landmark: Landmark, width: number, height: number): Poi
   };
 }
 
-function lerpPoint(previous: Point | null, next: Point, alpha: number): Point {
-  if (!previous) {
-    return next;
-  }
-
-  return {
-    x: previous.x + (next.x - previous.x) * alpha,
-    y: previous.y + (next.y - previous.y) * alpha,
-  };
-}
-
 function distanceBetween(a: Landmark, b: Landmark) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
@@ -155,21 +138,28 @@ export default function HandPainter() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number | null>(null);
   const cameraRef = useRef<{ stop?: () => void } | null>(null);
   const handsRef = useRef<{ close?: () => Promise<void> } | null>(null);
   const isActiveRef = useRef(false);
   const isSendingRef = useRef(false);
   const lastResultsRef = useRef<HandsResults | null>(null);
   const lastDrawPointRef = useRef<Point | null>(null);
-  const smoothedPinchCenterRef = useRef<Point | null>(null);
+  const lastPinchCenterRef = useRef<Point | null>(null);
+  const filteredPinchCenterRef = useRef<Point | null>(null);
   const scrollStateRef = useRef<ScrollState>({
-    active: false,
-    lostFrames: 0,
-    scrollVelocity: 0,
-    lastPinchCenter: null,
+    pinched: false,
+    direction: 0,
   });
   const trailSegmentsRef = useRef<TrailSegment[]>([]);
   const [status, setStatus] = useState("Requesting camera access...");
+  const [debug, setDebug] = useState<DebugState>({
+    pinchSpread: 0,
+    deltaY: 0,
+    direction: 0,
+    pinched: false,
+    middleExtended: false,
+  });
 
   useEffect(() => {
     let isCancelled = false;
@@ -182,17 +172,13 @@ export default function HandPainter() {
         return;
       }
 
-      const ratio = window.devicePixelRatio || 1;
       const width = window.innerWidth;
       const height = window.innerHeight;
 
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
+      canvas.width = width;
+      canvas.height = height;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-
-      const ctx = canvas.getContext("2d");
-      ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
 
     const drawFrame = () => {
@@ -204,31 +190,27 @@ export default function HandPainter() {
         return;
       }
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      const width = canvas.width;
+      const height = canvas.height;
       const now = performance.now();
+      const deltaSeconds = lastFrameTimeRef.current === null ? 0 : (now - lastFrameTimeRef.current) / 1000;
+      lastFrameTimeRef.current = now;
 
       ctx.clearRect(0, 0, width, height);
 
       const scrollState = scrollStateRef.current;
-      if (scrollState.active && Math.abs(scrollState.scrollVelocity) > 0) {
-        const scrollTop = window.scrollY;
-        const maxScrollTop = Math.max(
-          0,
-          document.documentElement.scrollHeight - window.innerHeight
-        );
+      if (scrollState.pinched && scrollState.direction !== 0 && deltaSeconds > 0) {
+        const scrollElement =
+          document.getElementById("app-scroll-root") ?? document.scrollingElement ?? document.documentElement;
+        const scrollTop = scrollElement.scrollTop;
+        const maxScrollTop = Math.max(0, scrollElement.scrollHeight - window.innerHeight);
+        const nextStep = scrollState.direction * SCROLL_SPEED_PER_SECOND * deltaSeconds;
 
         if (
-          (scrollState.scrollVelocity < 0 && scrollTop <= 0) ||
-          (scrollState.scrollVelocity > 0 && scrollTop >= maxScrollTop)
+          (scrollState.direction < 0 && scrollTop > 0) ||
+          (scrollState.direction > 0 && scrollTop < maxScrollTop)
         ) {
-          scrollState.active = false;
-          scrollState.scrollVelocity = 0;
-        } else {
-        window.scrollBy({
-          top: scrollState.scrollVelocity,
-          behavior: "auto",
-        });
+          scrollElement.scrollTop = Math.max(0, Math.min(maxScrollTop, scrollTop + nextStep));
         }
       }
 
@@ -254,38 +236,36 @@ export default function HandPainter() {
 
       const landmarks = lastResultsRef.current?.multiHandLandmarks?.[0];
 
-      if (landmarks) {
-        const points = landmarks.map((landmark) => projectLandmark(landmark, width, height));
+      if (
+        landmarks &&
+        window.drawConnectors &&
+        window.drawLandmarks &&
+        window.HAND_CONNECTIONS
+      ) {
+        ctx.save();
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
 
-        ctx.shadowBlur = 0;
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = "rgba(149, 222, 255, 0.9)";
+        window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, {
+          color: "rgba(149, 222, 255, 0.9)",
+          lineWidth: 2.5,
+        });
+        window.drawLandmarks(ctx, landmarks, {
+          color: "rgba(244, 247, 251, 0.92)",
+          lineWidth: 1,
+          radius: 4,
+        });
 
-        for (const [start, end] of HAND_CONNECTIONS) {
-          const from = points[start];
-          const to = points[end];
-
-          if (!from || !to) {
-            continue;
-          }
-
-          ctx.beginPath();
-          ctx.moveTo(from.x, from.y);
-          ctx.lineTo(to.x, to.y);
-          ctx.stroke();
+        const indexTip = landmarks[8];
+        if (indexTip) {
+          window.drawLandmarks(ctx, [indexTip], {
+            color: "rgba(255, 184, 106, 0.98)",
+            lineWidth: 1,
+            radius: 7,
+          });
         }
 
-        for (let index = 0; index < points.length; index += 1) {
-          const point = points[index];
-          const isIndexTip = index === 8;
-          const radius = isIndexTip ? 7 : 4;
-          const fill = isIndexTip ? "rgba(255, 184, 106, 0.98)" : "rgba(244, 247, 251, 0.92)";
-
-          ctx.fillStyle = fill;
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.restore();
       }
 
       animationFrameRef.current = window.requestAnimationFrame(drawFrame);
@@ -323,29 +303,38 @@ export default function HandPainter() {
 
           if (!landmarks) {
             lastDrawPointRef.current = null;
-            smoothedPinchCenterRef.current = null;
-            scrollStateRef.current.lostFrames += 1;
-
-            if (scrollStateRef.current.lostFrames >= SCROLL_LOST_FRAMES) {
-              scrollStateRef.current.active = false;
-              scrollStateRef.current.scrollVelocity = 0;
-              scrollStateRef.current.lastPinchCenter = null;
-            }
+            lastPinchCenterRef.current = null;
+            filteredPinchCenterRef.current = null;
+            scrollStateRef.current.pinched = false;
+            scrollStateRef.current.direction = 0;
+            setDebug((prev) => ({
+              ...prev,
+              pinchSpread: 0,
+              deltaY: 0,
+              direction: 0,
+              pinched: false,
+              middleExtended: false,
+            }));
             return;
           }
 
           const indexTip = landmarks[8];
           const middleTip = landmarks[12];
+
           if (!indexTip || !middleTip) {
             lastDrawPointRef.current = null;
-            smoothedPinchCenterRef.current = null;
-            scrollStateRef.current.lostFrames += 1;
-
-            if (scrollStateRef.current.lostFrames >= SCROLL_LOST_FRAMES) {
-              scrollStateRef.current.active = false;
-              scrollStateRef.current.scrollVelocity = 0;
-              scrollStateRef.current.lastPinchCenter = null;
-            }
+            lastPinchCenterRef.current = null;
+            filteredPinchCenterRef.current = null;
+            scrollStateRef.current.pinched = false;
+            scrollStateRef.current.direction = 0;
+            setDebug((prev) => ({
+              ...prev,
+              pinchSpread: 0,
+              deltaY: 0,
+              direction: 0,
+              pinched: false,
+              middleExtended: false,
+            }));
             return;
           }
 
@@ -364,7 +353,7 @@ export default function HandPainter() {
 
           lastDrawPointRef.current = indexPoint;
 
-          const pinchCenterRaw = projectLandmark(
+          const rawPinchCenter = projectLandmark(
             {
               x: (indexTip.x + middleTip.x) / 2,
               y: (indexTip.y + middleTip.y) / 2,
@@ -373,43 +362,67 @@ export default function HandPainter() {
             width,
             height
           );
-
-          const pinchCenter = lerpPoint(
-            smoothedPinchCenterRef.current,
-            pinchCenterRaw,
-            PINCH_CENTER_SMOOTHING
-          );
-          smoothedPinchCenterRef.current = pinchCenter;
+          const pinchCenter = filteredPinchCenterRef.current
+            ? {
+                x:
+                  filteredPinchCenterRef.current.x +
+                  (rawPinchCenter.x - filteredPinchCenterRef.current.x) * PINCH_CENTER_SMOOTHING,
+                y:
+                  filteredPinchCenterRef.current.y +
+                  (rawPinchCenter.y - filteredPinchCenterRef.current.y) * PINCH_CENTER_SMOOTHING,
+              }
+            : rawPinchCenter;
+          filteredPinchCenterRef.current = pinchCenter;
 
           const pinchSpread = distanceBetween(indexTip, middleTip);
-          const isTwoFingerScroll = scrollStateRef.current.active
+          const isMiddleExtended = isFingerExtended(landmarks, 12, 11, 10, 9);
+          const isTwoFingerScroll = scrollStateRef.current.pinched
             ? pinchSpread <= PINCH_EXIT_SPREAD
-            : isFingerExtended(landmarks, 12, 11, 10, 9) && pinchSpread <= PINCH_ENTER_SPREAD;
+            : isMiddleExtended && pinchSpread <= PINCH_ENTER_SPREAD;
 
           if (!isTwoFingerScroll) {
-            scrollStateRef.current.lostFrames += 1;
-
-            if (scrollStateRef.current.lostFrames >= SCROLL_LOST_FRAMES) {
-              scrollStateRef.current.active = false;
-              scrollStateRef.current.scrollVelocity = 0;
-              scrollStateRef.current.lastPinchCenter = null;
-            }
+            scrollStateRef.current.pinched = false;
+            scrollStateRef.current.direction = 0;
+            lastPinchCenterRef.current = null;
+            filteredPinchCenterRef.current = null;
+            setDebug({
+              pinchSpread,
+              deltaY: 0,
+              direction: 0,
+              pinched: false,
+              middleExtended: isMiddleExtended,
+            });
             return;
           }
 
-          scrollStateRef.current.active = true;
-          scrollStateRef.current.lostFrames = 0;
+          scrollStateRef.current.pinched = true;
+          let deltaY = 0;
 
-          if (scrollStateRef.current.lastPinchCenter) {
-            const deltaY = pinchCenter.y - scrollStateRef.current.lastPinchCenter.y;
+          if (lastPinchCenterRef.current) {
+            deltaY = pinchCenter.y - lastPinchCenterRef.current.y;
 
-            if (Math.abs(deltaY) < SCROLL_DEADZONE) {
-            } else if (Math.abs(deltaY) >= SCROLL_TRIGGER_DELTA) {
-              scrollStateRef.current.scrollVelocity = deltaY > 0 ? SCROLL_FIXED_STEP : -SCROLL_FIXED_STEP;
+            if (
+              scrollStateRef.current.direction === 0 &&
+              Math.abs(deltaY) >= SCROLL_START_DELTA
+            ) {
+              scrollStateRef.current.direction = deltaY > 0 ? 1 : -1;
+            } else if (
+              scrollStateRef.current.direction !== 0 &&
+              Math.sign(deltaY) !== scrollStateRef.current.direction &&
+              Math.abs(deltaY) >= SCROLL_SWITCH_DELTA
+            ) {
+              scrollStateRef.current.direction = deltaY > 0 ? 1 : -1;
             }
           }
 
-          scrollStateRef.current.lastPinchCenter = pinchCenter;
+          lastPinchCenterRef.current = pinchCenter;
+          setDebug({
+            pinchSpread,
+            deltaY,
+            direction: scrollStateRef.current.direction,
+            pinched: scrollStateRef.current.pinched,
+            middleExtended: isMiddleExtended,
+          });
         });
 
         const camera = new window.Camera(video, {
@@ -471,12 +484,12 @@ export default function HandPainter() {
 
       lastResultsRef.current = null;
       lastDrawPointRef.current = null;
-      smoothedPinchCenterRef.current = null;
+      lastPinchCenterRef.current = null;
+      filteredPinchCenterRef.current = null;
+      lastFrameTimeRef.current = null;
       scrollStateRef.current = {
-        active: false,
-        lostFrames: 0,
-        scrollVelocity: 0,
-        lastPinchCenter: null,
+        pinched: false,
+        direction: 0,
       };
       isSendingRef.current = false;
 
@@ -496,6 +509,12 @@ export default function HandPainter() {
       <div className="hand-painter-hud">
         <p className="hand-painter-kicker">MediaPipe</p>
         <p className="hand-painter-copy">{status}</p>
+        <p className="hand-painter-copy">
+          spread {debug.pinchSpread.toFixed(3)} | dy {debug.deltaY.toFixed(2)} | dir {debug.direction}
+        </p>
+        <p className="hand-painter-copy">
+          pinch {debug.pinched ? "on" : "off"} | middle {debug.middleExtended ? "up" : "down"}
+        </p>
       </div>
     </>
   );

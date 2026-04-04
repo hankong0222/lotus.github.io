@@ -1,5 +1,6 @@
 ﻿export type Project = {
   slug: string;
+  githubUrl: string;
   title: string;
   category: string;
   year: string;
@@ -21,6 +22,7 @@ export type Note = {
 export const featuredProjects: Project[] = [
   {
     slug: "education-ai-platform",
+    githubUrl: "https://github.com/hankong0222",
     title: "Education AI Improvement Platform",
     category: "Applied AI Research",
     year: "2025-Present",
@@ -37,6 +39,7 @@ export const featuredProjects: Project[] = [
   },
   {
     slug: "luma-meditation-app",
+    githubUrl: "https://github.com/hankong0222",
     title: "LUMA Generative AI Meditation App",
     category: "Generative AI Product",
     year: "2025",
@@ -53,6 +56,7 @@ export const featuredProjects: Project[] = [
   },
   {
     slug: "inclusive-tech-research",
+    githubUrl: "https://github.com/hankong0222",
     title: "Inclusive Technology for Older Adults",
     category: "Human-Centered Research",
     year: "2021-Present",
@@ -69,6 +73,7 @@ export const featuredProjects: Project[] = [
   },
   {
     slug: "ftc-robotics-engineering",
+    githubUrl: "https://github.com/hankong0222",
     title: "FTC Robotics Engineering",
     category: "Robotics Systems",
     year: "2021-2022",
@@ -132,4 +137,3 @@ export const thinkingEssays: Note[] = [
       "Tutoring and curriculum support sharpen how I explain complexity, which also improves how I design software for real users.",
   },
 ];
-

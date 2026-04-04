@@ -18,7 +18,9 @@ export default function RootLayout({
       <body>
         <ParticleField />
         <HandPainter />
-        {children}
+        <div id="app-scroll-root" className="app-scroll-root">
+          {children}
+        </div>
       </body>
     </html>
   );

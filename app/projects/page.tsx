@@ -11,16 +11,20 @@ export default function ProjectsPage() {
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           {featuredProjects.map((project) => (
-            <article key={project.slug} className="glass-card rounded-[2rem] p-6">
+            <a
+              key={project.slug}
+              href={project.githubUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="glass-card rounded-[2rem] p-6 transition hover:translate-y-[-4px]"
+            >
               <p className="text-sm text-[color:var(--muted)]">{project.category} - {project.year}</p>
               <h2 className="mt-4 text-2xl font-semibold">{project.title}</h2>
               <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{project.summary}</p>
-            </article>
+            </a>
           ))}
         </div>
       </div>
     </main>
   );
 }
-
-

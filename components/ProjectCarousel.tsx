@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import type { Project } from "@/lib/site-content";
 
@@ -8,7 +7,7 @@ type ProjectCarouselProps = {
   projects: Project[];
 };
 
-const ANIMATION_MS = 13000;
+const ANIMATION_MS = 18000;
 
 export default function ProjectCarousel({ projects }: ProjectCarouselProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -149,9 +148,11 @@ function ProjectCard({
   const cardRef = useRef<HTMLAnchorElement | null>(null);
 
   return (
-    <Link
-      href={`/projects/${project.slug}`}
+    <a
+      href={project.githubUrl}
       ref={cardRef}
+      target="_blank"
+      rel="noreferrer"
       className="glass-card project-rail-card group block rounded-[2rem] p-6"
       onMouseEnter={() => onHoverCenter(cardRef.current)}
       onFocus={() => onHoverCenter(cardRef.current)}
@@ -170,6 +171,6 @@ function ProjectCard({
           </span>
         ))}
       </div>
-    </Link>
+    </a>
   );
 }

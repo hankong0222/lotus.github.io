@@ -197,7 +197,8 @@ export default function ParticleField() {
     let activeMode: Mode = "hero";
     let palette = palettes.hero;
     let frame = 0;
-    let scrollY = window.scrollY;
+    const scrollRoot = document.getElementById("app-scroll-root");
+    let scrollY = scrollRoot?.scrollTop ?? window.scrollY;
     let bloomProgress = 0;
     const mouse = { x: 0, y: 0 };
     const visibleSections = new Map<Element, number>();
@@ -255,15 +256,20 @@ export default function ParticleField() {
         });
         syncMode();
       },
-      { threshold: [0.1, 0.2, 0.35, 0.5, 0.7, 0.9] },
+      {
+        root: scrollRoot,
+        threshold: [0.1, 0.2, 0.35, 0.5, 0.7, 0.9],
+      },
     );
 
     document.querySelectorAll("[data-particle-mode]").forEach((element) => observer.observe(element));
 
     const onScroll = () => {
-      scrollY = window.scrollY;
-      const doc = document.documentElement;
-      const maxScroll = Math.max(doc.scrollHeight - window.innerHeight, 1);
+      const currentScrollRoot = document.getElementById("app-scroll-root");
+      scrollY = currentScrollRoot?.scrollTop ?? window.scrollY;
+      const maxScroll = currentScrollRoot
+        ? Math.max(currentScrollRoot.scrollHeight - currentScrollRoot.clientHeight, 1)
+        : Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       bloomProgress = clamp(scrollY / maxScroll, 0, 1);
       updateTargets();
     };
@@ -352,14 +358,14 @@ export default function ParticleField() {
     render();
 
     window.addEventListener("resize", resize);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    scrollRoot?.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pointermove", onPointerMove, { passive: true });
 
     return () => {
       disposed = true;
       observer.disconnect();
       window.removeEventListener("resize", resize);
-      window.removeEventListener("scroll", onScroll);
+      scrollRoot?.removeEventListener("scroll", onScroll);
       window.removeEventListener("pointermove", onPointerMove);
       window.cancelAnimationFrame(frame);
     };
