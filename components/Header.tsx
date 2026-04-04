@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 const links = [
   { href: "#home", label: "Home" },
@@ -13,7 +13,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 px-4 pt-4">
       <div className="section-shell glass-card flex items-center justify-between rounded-full px-5 py-3">
         <a href="#home" className="text-sm font-semibold tracking-[0.3em] uppercase">
-          Lotus
+          Lotus Kong
         </a>
         <nav className="hidden items-center gap-6 text-sm text-[color:var(--muted)] md:flex">
           {links.map((link) => (
@@ -32,3 +32,4 @@ export default function Header() {
     </header>
   );
 }
+

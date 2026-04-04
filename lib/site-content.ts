@@ -1,4 +1,4 @@
-export type Project = {
+﻿export type Project = {
   slug: string;
   title: string;
   category: string;
@@ -20,115 +20,116 @@ export type Note = {
 
 export const featuredProjects: Project[] = [
   {
-    slug: "signal-workbench",
-    title: "Signal Workbench",
-    category: "Research Tooling",
-    year: "2026",
+    slug: "education-ai-platform",
+    title: "Education AI Improvement Platform",
+    category: "Applied AI Research",
+    year: "2025-Present",
     summary:
-      "A browser-based workspace for comparing model outputs, annotating edge cases, and turning raw findings into reusable evaluation prompts.",
+      "An interpretable AI system that predicts how growth in specific competencies can affect student performance and turns those insights into actionable recommendations for teachers.",
     challenge:
-      "Research sessions were scattered across docs, screenshots, and ad-hoc scripts, which made it difficult to compare iterations with confidence.",
+      "Teachers often have fragmented student data but limited support for understanding which skills most strongly influence future learning outcomes.",
     approach:
-      "I designed a modular review flow with prompt snapshots, side-by-side comparisons, and lightweight annotation primitives to keep evaluation close to the source material.",
+      "I built a hybrid CNN and MDP modeling pipeline, developed a Flask backend, and deployed a web platform where educators can upload data and receive personalized improvement guidance.",
     outcome:
-      "The system reduced synthesis time, clarified experiment history, and made discussion with collaborators more concrete and reproducible.",
-    stack: ["Next.js", "TypeScript", "Design Systems", "Structured Evaluation"],
-    metrics: ["4x faster review loops", "Shared annotation model", "Reusable prompt audit trail"],
+      "The project translated model output into interpretable visual reports, including heatmaps and radar charts, so recommendations could be discussed and acted on in a classroom context.",
+    stack: ["Python", "CNN", "MDP", "Flask", "Data Visualization"],
+    metrics: ["Hybrid predictive modeling", "Teacher-facing recommendation workflow", "Interpretable AI diagnostics"],
   },
   {
-    slug: "field-notes-atlas",
-    title: "Field Notes Atlas",
-    category: "Knowledge Interface",
+    slug: "luma-meditation-app",
+    title: "LUMA Generative AI Meditation App",
+    category: "Generative AI Product",
     year: "2025",
     summary:
-      "A map-like interface for browsing fragmented observations, references, and speculative links between them.",
+      "A web-based meditation experience that combines LLM-guided scripting, speech synthesis, and custom audio playback into a calm, interactive wellness product.",
     challenge:
-      "Interesting notes often stayed isolated, which meant insights were hard to revisit or connect into larger themes.",
+      "Most AI wellness demos feel disconnected across text, voice, and playback, which makes the experience feel generic instead of immersive.",
     approach:
-      "I built a spatial browsing experience that treats notes as clusters instead of flat entries, encouraging pattern recognition and conceptual drift.",
+      "I developed the product with a Flask backend and React frontend, used Cohere for generation, Google Cloud TTS for voice, and validated structured outputs with pydantic before audio rendering.",
     outcome:
-      "The project turned a personal archive into a navigable thinking environment and created a stronger bridge between note-taking and publishing.",
-    stack: ["React", "Content Architecture", "Interaction Design"],
-    metrics: ["Non-linear browsing model", "Pattern-first information design", "Ready for editorial expansion"],
+      "The result was a full-stack GenAI prototype with smoother playback, stronger prompt reliability, and a more intentional end-to-end user experience.",
+    stack: ["React", "Flask", "Cohere", "Google Cloud TTS", "pydantic", "Web Audio API"],
+    metrics: ["Structured prompt validation", "Audio post-processing with pydub", "Interactive playback UI"],
   },
   {
-    slug: "quiet-systems-lab",
-    title: "Quiet Systems Lab",
-    category: "Editorial Platform",
-    year: "2025",
+    slug: "inclusive-tech-research",
+    title: "Inclusive Technology for Older Adults",
+    category: "Human-Centered Research",
+    year: "2021-Present",
     summary:
-      "A writing-first website for essays on product judgment, interface clarity, and long-horizon technical thinking.",
+      "A long-running community and research effort focused on digital inclusion, usability barriers, and accessible technology design for older adults.",
     challenge:
-      "Most publishing tools are optimized for throughput, not for building a clear intellectual identity or a durable reading experience.",
+      "Older adults are often asked to adopt smartphones, internet services, and biometric systems that are not designed with their needs or constraints in mind.",
     approach:
-      "I focused on typography, pacing, and structure, then paired the editorial layer with a minimal publishing workflow that keeps attention on ideas.",
+      "I organized annual outreach activities, taught practical mobile and internet skills, and studied usability issues in retinal and fingerprint-based systems to understand accessibility gaps.",
     outcome:
-      "The result is a platform that feels slower, more intentional, and better aligned with reflective technical writing.",
-    stack: ["Next.js", "Editorial Design", "MDX-ready Architecture"],
-    metrics: ["Reader-friendly pacing", "Portable content model", "Minimal maintenance overhead"],
+      "This work connected research and service, leading to more inclusive design ideas such as adaptive authentication and more accessible interface patterns.",
+    stack: ["User Research", "Accessibility", "Community Outreach", "Biometric Systems"],
+    metrics: ["5 yearly outreach activities", "Provincial exhibition representation", "Inclusive authentication concepts"],
   },
   {
-    slug: "common-ground-ui",
-    title: "Common Ground UI",
-    category: "Component System",
-    year: "2024",
+    slug: "ftc-robotics-engineering",
+    title: "FTC Robotics Engineering",
+    category: "Robotics Systems",
+    year: "2021-2022",
     summary:
-      "A design and implementation system for shared product primitives, documentation patterns, and interface consistency.",
+      "A robotics engineering project spanning mechanical design, simulation, autonomous behavior, and sensor-integrated control.",
     challenge:
-      "Teams were repeatedly rebuilding similar interface patterns with small inconsistencies that accumulated into product friction.",
+      "Competition robotics requires rapid iteration across hardware and software while keeping systems reliable enough for real-world performance.",
     approach:
-      "I created a component language rooted in constraints, behavior notes, and examples that show why a pattern exists, not just how it looks.",
+      "I designed and simulated robot components in Fusion 360 and SolidWorks, then programmed autonomous and driver-controlled operations in Java using sensor feedback.",
     outcome:
-      "The library improved implementation consistency while making design reasoning easier to transfer across teams.",
-    stack: ["React", "Tailwind CSS", "System Documentation"],
-    metrics: ["Reusable primitives", "Shared decision language", "Lower UI drift"],
+      "The experience strengthened my systems thinking by connecting CAD, control logic, and real-world debugging into one engineering workflow.",
+    stack: ["Java", "Fusion 360", "SolidWorks", "Sensors", "Autonomous Control"],
+    metrics: ["Mechanical and software integration", "Autonomous + driver-controlled modes", "Competition-oriented systems design"],
   },
 ];
 
 export const ideaNotes: Note[] = [
   {
-    slug: "interfaces-that-teach",
-    title: "Interfaces That Teach",
-    tag: "Idea Note",
+    slug: "interpretable-ai-for-teachers",
+    title: "Interpretable AI for Teachers",
+    tag: "Research Direction",
     summary:
-      "A note on designing products that quietly improve the user's judgment instead of merely automating the next click.",
+      "How model outputs become more useful when educators can trace them through visual evidence, competency signals, and concrete intervention suggestions.",
   },
   {
-    slug: "memory-as-product-layer",
-    title: "Memory as a Product Layer",
-    tag: "Research Reflection",
+    slug: "inclusive-biometrics",
+    title: "Inclusive Biometrics for Aging Populations",
+    tag: "Human-Centered Study",
     summary:
-      "A reflection on how memory systems change trust, continuity, and the feeling of being understood inside software.",
+      "Questions around retinal and fingerprint sensitivity, usability barriers, and what adaptive authentication should look like in real products.",
   },
   {
-    slug: "slow-tools-for-serious-work",
-    title: "Slow Tools for Serious Work",
-    tag: "Exploration",
+    slug: "multimodal-ai-experiences",
+    title: "Multimodal AI Experiences That Feel Calm",
+    tag: "Product Exploration",
     summary:
-      "A short argument for software that favors orientation, depth, and composure over speed theatre.",
+      "Exploring how language models, speech synthesis, and interface pacing can work together to create more emotionally coherent AI products.",
   },
 ];
 
 export const thinkingEssays: Note[] = [
   {
-    slug: "clarity-before-scale",
-    title: "Clarity Before Scale",
+    slug: "research-to-product",
+    title: "From Research Insight to Usable Product",
     tag: "Essay",
     summary:
-      "Why product systems usually fail from ambiguous judgment before they fail from technical complexity.",
+      "I am most interested in the moment when technical models stop being experiments and start becoming tools people can understand and trust.",
   },
   {
-    slug: "designing-for-interpretability",
-    title: "Designing for Interpretability",
-    tag: "Opinion",
+    slug: "learning-across-domains",
+    title: "Learning Across AI, Bioinformatics, and Robotics",
+    tag: "Reflection",
     summary:
-      "What interface designers can learn from research tooling when the goal is not just output, but understanding.",
+      "Working across very different systems has taught me to look for transferable structure: signals, constraints, feedback, and human decision points.",
   },
   {
-    slug: "systems-are-social",
-    title: "Systems Are Social",
-    tag: "System Thinking",
+    slug: "teaching-and-building",
+    title: "Teaching Makes Me Build Better",
+    tag: "Perspective",
     summary:
-      "A piece on how organizational behavior quietly becomes product behavior, whether teams notice it or not.",
+      "Tutoring and curriculum support sharpen how I explain complexity, which also improves how I design software for real users.",
   },
 ];
+

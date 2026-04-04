@@ -159,3 +159,113 @@ footer {
 .glass-card {
   position: relative;
 }
+
+.project-rail-shell {
+  position: relative;
+}
+
+.project-rail-shell::before,
+.project-rail-shell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.project-rail-shell::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(8, 17, 29, 0.95), rgba(8, 17, 29, 0));
+}
+
+.project-rail-shell::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(8, 17, 29, 0.95), rgba(8, 17, 29, 0));
+}
+
+.project-rail {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.25rem 0 1rem;
+}
+
+.project-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.project-rail-track {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 1.5rem;
+}
+
+.project-rail-viewport {
+  overflow: hidden;
+}
+
+.project-rail-track-animated {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: project-marquee 20s linear infinite;
+}
+
+.project-rail-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.project-rail-card {
+  min-width: 19rem;
+  max-width: 19rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.1);
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.project-rail-card:hover,
+.project-rail-card:focus-visible {
+  transform: translateY(-8px) scale(1.01);
+  border-color: rgba(255, 195, 157, 0.34);
+  box-shadow:
+    0 30px 80px rgba(4, 10, 22, 0.34),
+    0 0 0 1px rgba(255, 195, 157, 0.08);
+  background: linear-gradient(180deg, rgba(255, 251, 244, 0.11), rgba(255, 251, 244, 0.07));
+}
+
+@media (min-width: 768px) {
+  .project-rail-card {
+    min-width: 23rem;
+    max-width: 23rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .project-rail-card {
+    min-width: 27rem;
+    max-width: 27rem;
+  }
+}
+
+@keyframes project-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
