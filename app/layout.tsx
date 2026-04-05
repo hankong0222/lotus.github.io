@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import HandPainter from "@/components/HandPainter";
-import ParticleField from "@/components/ParticleField";
+import RouteEffects from "@/components/RouteEffects";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,8 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ParticleField />
-        <HandPainter />
+        <RouteEffects />
         <div id="app-scroll-root" className="app-scroll-root">
           {children}
         </div>

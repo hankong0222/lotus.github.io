@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gif": "node scripts/video-to-gif.js"
+    "gif": "node lib/video-to-gif.js"
   },
   "dependencies": {
     "next": "16.1.6",

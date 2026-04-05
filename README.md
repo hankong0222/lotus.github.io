@@ -20,6 +20,35 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## GIF Conversion
+
+Convert a local demo video into a GIF with:
+
+```bash
+npm run gif -- --input .\asset\demo_with_prediction.mp4
+```
+
+You can also pass any other local video path:
+
+```bash
+npm run gif -- --input .\path\to\your-demo.mp4
+```
+
+The script will:
+
+- read the source video dimensions automatically
+- preserve aspect ratio
+- export the GIF to `asset/<input-name>.gif`
+- target a 4 second GIF by default
+- slow down videos shorter than 4 seconds
+- speed up videos longer than 4 seconds
+
+Optional flags:
+
+```bash
+npm run gif -- --input .\asset\demo_with_prediction.mp4 --target-duration 4 --fps 15
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

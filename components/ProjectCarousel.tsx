@@ -1,13 +1,22 @@
 ﻿"use client";
 
+import Image from "next/image";
 import { useEffect, useRef } from "react";
-import type { Project } from "@/lib/site-content";
+import demoWithPrediction from "@/asset/demo_with_prediction.gif";
+import pixelPet from "@/asset/pixel_pet.gif";
+import betterMe from "@/asset/better_me.gif";
+import type { Project } from "@/content/types";
 
 type ProjectCarouselProps = {
   projects: Project[];
 };
 
 const ANIMATION_MS = 18000;
+const previewAssetMap = {
+  demo_with_prediction: demoWithPrediction,
+  pixel_pet: pixelPet,
+  better_me: betterMe,
+} as const;
 
 export default function ProjectCarousel({ projects }: ProjectCarouselProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -124,12 +133,12 @@ export default function ProjectCarousel({ projects }: ProjectCarouselProps) {
         <div ref={trackRef} className="project-rail-track-animated">
           <div ref={firstGroupRef} className="project-rail-group">
             {projects.map((project) => (
-              <ProjectCard key={project.slug} project={project} onHoverCenter={centerCard} />
+              <ProjectCard key={project.id} project={project} onHoverCenter={centerCard} />
             ))}
           </div>
           <div className="project-rail-group" aria-hidden="true">
             {projects.map((project) => (
-              <ProjectCard key={`${project.slug}-clone`} project={project} onHoverCenter={centerCard} />
+              <ProjectCard key={`${project.id}-clone`} project={project} onHoverCenter={centerCard} />
             ))}
           </div>
         </div>
@@ -146,6 +155,7 @@ function ProjectCard({
   onHoverCenter: (card: HTMLAnchorElement | null) => void;
 }) {
   const cardRef = useRef<HTMLAnchorElement | null>(null);
+  const preview = project.previewAsset ? previewAssetMap[project.previewAsset as keyof typeof previewAssetMap] : null;
 
   return (
     <a
@@ -158,8 +168,12 @@ function ProjectCard({
       onFocus={() => onHoverCenter(cardRef.current)}
     >
       <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--accent-deep)] to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-      <p className="text-sm text-[color:var(--muted)]">{project.category} - {project.year}</p>
       <h3 className="mt-4 text-2xl font-semibold">{project.title}</h3>
+      {preview ? (
+        <div className="mb-5 overflow-hidden rounded-[1.4rem] border border-white/8 bg-black/20">
+          <Image src={preview} alt={`${project.title} preview`} className="h-56 w-full object-contain" unoptimized />
+        </div>
+      ) : null}
       <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{project.summary}</p>
       <div className="mt-6 flex flex-wrap gap-2">
         {project.stack.slice(0, 3).map((item) => (
@@ -174,3 +188,6 @@ function ProjectCard({
     </a>
   );
 }
+
+
+

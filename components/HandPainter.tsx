@@ -39,10 +39,6 @@ type DebugState = {
 
 declare global {
   interface Window {
-    Camera?: new (
-      video: HTMLVideoElement,
-      options: { onFrame: () => Promise<void>; width: number; height: number }
-    ) => { start: () => Promise<void>; stop?: () => void };
     HAND_CONNECTIONS?: Array<[number, number]>;
     Hands?: new (config: { locateFile: (file: string) => string }) => {
       setOptions: (options: Record<string, number | boolean>) => void;
@@ -65,7 +61,6 @@ declare global {
 }
 
 const SCRIPT_URLS = [
-  "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js",
   "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js",
   "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js",
 ];
@@ -77,6 +72,7 @@ const SCROLL_START_DELTA = 5;
 const SCROLL_SWITCH_DELTA = 9;
 const PINCH_ENTER_SPREAD = 0.07;
 const PINCH_EXIT_SPREAD = 0.095;
+
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
@@ -134,12 +130,40 @@ function isFingerExtended(
   );
 }
 
+function waitForVideoReady(video: HTMLVideoElement) {
+  return new Promise<void>((resolve, reject) => {
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      resolve();
+      return;
+    }
+
+    const onLoaded = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error("Video stream failed to initialize."));
+    };
+    const cleanup = () => {
+      video.removeEventListener("loadedmetadata", onLoaded);
+      video.removeEventListener("canplay", onLoaded);
+      video.removeEventListener("error", onError);
+    };
+
+    video.addEventListener("loadedmetadata", onLoaded, { once: true });
+    video.addEventListener("canplay", onLoaded, { once: true });
+    video.addEventListener("error", onError, { once: true });
+  });
+}
+
 export default function HandPainter() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const processingFrameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number | null>(null);
-  const cameraRef = useRef<{ stop?: () => void } | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const handsRef = useRef<{ close?: () => Promise<void> } | null>(null);
   const isActiveRef = useRef(false);
   const isSendingRef = useRef(false);
@@ -164,6 +188,7 @@ export default function HandPainter() {
   useEffect(() => {
     let isCancelled = false;
     isActiveRef.current = true;
+    const videoElement = videoRef.current;
 
     const fitCanvas = () => {
       const canvas = canvasRef.current;
@@ -275,11 +300,11 @@ export default function HandPainter() {
       try {
         await Promise.all(SCRIPT_URLS.map((url) => loadScript(url)));
 
-        if (isCancelled || !window.Hands || !window.Camera) {
+        if (isCancelled || !window.Hands) {
           return;
         }
 
-        const video = videoRef.current;
+        const video = videoElement;
 
         if (!video) {
           return;
@@ -425,18 +450,39 @@ export default function HandPainter() {
           });
         });
 
-        const camera = new window.Camera(video, {
-          onFrame: async () => {
-            if (isCancelled || !isActiveRef.current || isSendingRef.current) {
-              return;
-            }
+        handsRef.current = hands;
+        fitCanvas();
+        animationFrameRef.current = window.requestAnimationFrame(drawFrame);
 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        if (isCancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        video.srcObject = stream;
+        await waitForVideoReady(video);
+        await video.play();
+
+        const processVideoFrame = async () => {
+          if (isCancelled || !isActiveRef.current) {
+            return;
+          }
+
+          if (!isSendingRef.current && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
             isSendingRef.current = true;
 
             try {
-              if (!isCancelled && isActiveRef.current) {
-                await hands.send({ image: video });
-              }
+              await hands.send({ image: video });
             } catch (error) {
               if (!isCancelled) {
                 console.error(error);
@@ -444,17 +490,14 @@ export default function HandPainter() {
             } finally {
               isSendingRef.current = false;
             }
-          },
-          width: 1280,
-          height: 720,
-        });
+          }
 
-        handsRef.current = hands;
-        cameraRef.current = camera;
+          processingFrameRef.current = window.requestAnimationFrame(() => {
+            void processVideoFrame();
+          });
+        };
 
-        fitCanvas();
-        animationFrameRef.current = window.requestAnimationFrame(drawFrame);
-        await camera.start();
+        void processVideoFrame();
 
         if (!isCancelled) {
           setStatus("Draw with your index finger. Pinch index and middle fingers together to scroll.");
@@ -481,6 +524,9 @@ export default function HandPainter() {
       if (animationFrameRef.current !== null) {
         window.cancelAnimationFrame(animationFrameRef.current);
       }
+      if (processingFrameRef.current !== null) {
+        window.cancelAnimationFrame(processingFrameRef.current);
+      }
 
       lastResultsRef.current = null;
       lastDrawPointRef.current = null;
@@ -492,9 +538,13 @@ export default function HandPainter() {
         direction: 0,
       };
       isSendingRef.current = false;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
 
-      cameraRef.current?.stop?.();
-      cameraRef.current = null;
+      if (videoElement) {
+        videoElement.pause();
+        videoElement.srcObject = null;
+      }
 
       const handsInstance = handsRef.current;
       handsRef.current = null;

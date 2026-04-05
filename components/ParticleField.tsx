@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-type Mode = "hero" | "projects" | "ideas" | "thinking" | "about" | "detail";
+type Mode = "hero" | "projects" | "ideas" | "thinking" | "about";
 type PointKind = "edge" | "fill" | "center";
 
 type Particle = {
@@ -36,7 +36,6 @@ const palettes: Record<Mode, Palette> = {
   ideas: { background: "18, 11, 34", particle: "247, 231, 255", glow: "182, 115, 255" },
   thinking: { background: "19, 23, 26", particle: "245, 240, 228", glow: "255, 192, 91" },
   about: { background: "11, 24, 19", particle: "230, 248, 239", glow: "75, 206, 154" },
-  detail: { background: "17, 18, 30", particle: "234, 238, 255", glow: "110, 133, 255" },
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -48,7 +47,7 @@ function lerp(start: number, end: number, amount: number) {
 }
 
 function modeFromString(value: string | null): Mode {
-  if (value === "hero" || value === "projects" || value === "ideas" || value === "thinking" || value === "about" || value === "detail") {
+  if (value === "hero" || value === "projects" || value === "ideas" || value === "thinking" || value === "about") {
     return value;
   }
 
@@ -153,7 +152,6 @@ function createTargets(mode: Mode, width: number, height: number, bloomProgress:
     ideas: { scale: 0.48, lift: 0.04, stretchX: 1.06, stretchY: 1.02 },
     thinking: { scale: 0.4, lift: 0.02, stretchX: 0.96, stretchY: 0.96 },
     about: { scale: 0.44, lift: 0.06, stretchX: 0.98, stretchY: 1 },
-    detail: { scale: 0.5, lift: 0.03, stretchX: 1.08, stretchY: 1.04 },
   };
 
   const config = configs[mode];

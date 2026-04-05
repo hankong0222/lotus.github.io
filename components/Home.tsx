@@ -1,7 +1,9 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import portrait from "@/asset/half.jpg";
+import IdeasList from "@/components/IdeasList";
 import ProjectCarousel from "@/components/ProjectCarousel";
-import { featuredProjects, ideaNotes, thinkingEssays } from "@/lib/site-content";
+import { featuredProjects } from "@/content/projects";
+import { thinkingEssays } from "@/content/thinking";
 
 export default function Home() {
   return (
@@ -55,7 +57,7 @@ export default function Home() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <p className="section-kicker">Featured Projects</p>
-              <h2 className="section-title mt-4">Curiosity-driven explorations in AI systems.</h2>
+              <h2 className="section-title mt-4">Curiosity-driven projects.</h2>
               <p className="mt-4 max-w-xl text-sm leading-6 text-[color:var(--muted)]">
                 The rail below drifts automatically. Move your cursor onto it to pause and inspect a project.
               </p>
@@ -70,20 +72,11 @@ export default function Home() {
         <div className="section-shell">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="section-kicker">Research Preview</p>
-              <h2 className="section-title mt-4">Themes I keep returning to in research, product design, and real-world systems.</h2>
+              <p className="section-kicker">Research & Explorations</p>
+              <h2 className="section-title mt-4">Ongoing research, ideas, and questions shaping my work.</h2>
             </div>
           </div>
-
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            {ideaNotes.map((note) => (
-              <article key={note.slug} className="glass-card rounded-[2rem] p-6">
-                <p className="text-sm text-[color:var(--muted)]">{note.tag}</p>
-                <h3 className="mt-3 text-2xl font-semibold">{note.title}</h3>
-                <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{note.summary}</p>
-              </article>
-            ))}
-          </div>
+          <IdeasList />
         </div>
       </section>
 
@@ -98,7 +91,7 @@ export default function Home() {
 
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {thinkingEssays.map((essay) => (
-              <article key={essay.slug} className="glass-card rounded-[2rem] p-6">
+              <article key={essay.id} className="glass-card rounded-[2rem] p-6">
                 <p className="text-sm text-[color:var(--muted)]">{essay.tag}</p>
                 <h3 className="mt-3 text-2xl font-semibold">{essay.title}</h3>
                 <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{essay.summary}</p>
