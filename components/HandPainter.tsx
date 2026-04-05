@@ -119,6 +119,7 @@ const PINCH_ENTER_SPREAD = 0.07;
 const PINCH_EXIT_SPREAD = 0.095;
 const GESTURE_STABLE_FRAMES = 8;
 const GESTURE_COOLDOWN_MS = 1400;
+const GESTURE_RECOGNITION_INTERVAL_MS = 220;
 
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -553,6 +554,18 @@ export default function HandPainter() {
         landmarks && landmarks[12] && landmarks[11] && landmarks[10] && landmarks[9]
           ? isFingerExtended(landmarks, 12, 11, 10, 9)
           : false;
+      const shouldPauseGestureRecognition =
+        scrollStateRef.current.pinched ||
+        (indexTip !== undefined &&
+          middleTip !== undefined &&
+          isMiddleExtended &&
+          pinchSpread <= PINCH_ENTER_SPREAD);
+
+      if (shouldPauseGestureRecognition) {
+        gestureStateRef.current.candidate = null;
+        gestureStateRef.current.stableFrames = 0;
+        return;
+      }
 
       const originalConsoleError = console.error;
 
@@ -821,7 +834,10 @@ export default function HandPainter() {
         };
 
         void processVideoFrame();
-        gestureLoopRef.current = window.setInterval(runGestureRecognition, 120);
+        gestureLoopRef.current = window.setInterval(
+          runGestureRecognition,
+          GESTURE_RECOGNITION_INTERVAL_MS
+        );
 
         if (!isCancelled) {
           setStatus(
