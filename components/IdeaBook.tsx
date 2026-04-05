@@ -15,11 +15,13 @@ function BookSheet({
   pages,
   projectTitle,
   projectSubtitle,
+  projectHeroImage,
   showProjectHeader,
 }: {
   pages: IdeaPage[];
   projectTitle: string;
   projectSubtitle?: string;
+  projectHeroImage?: IdeaListItem["heroImage"];
   showProjectHeader: boolean;
 }) {
   return (
@@ -28,6 +30,20 @@ function BookSheet({
         <header className="idea-book-project-header">
           <h1 className="idea-book-title">{projectTitle}</h1>
           {projectSubtitle ? <p className="idea-book-project-subtitle">{projectSubtitle}</p> : null}
+          {projectHeroImage ? (
+            <figure className="idea-book-hero-figure">
+              <div className="idea-book-hero-frame">
+                <Image
+                  src={projectHeroImage.src}
+                  alt={projectHeroImage.alt}
+                  width={1400}
+                  height={900}
+                  className="idea-book-image"
+                />
+              </div>
+              {projectHeroImage.caption ? <figcaption className="idea-book-caption">{projectHeroImage.caption}</figcaption> : null}
+            </figure>
+          ) : null}
         </header>
       ) : null}
       <div className="idea-book-sheet-sections">
@@ -92,7 +108,13 @@ export default function IdeaBook({ accent, idea, previousIdea, nextIdea }: IdeaB
         <div className="idea-book-stage">
           <div className="idea-book-shadow" />
           <div className="idea-book-spread">
-            <BookSheet pages={leftPages} projectTitle={idea.title} projectSubtitle={idea.subtitle} showProjectHeader />
+            <BookSheet
+              pages={leftPages}
+              projectTitle={idea.title}
+              projectSubtitle={idea.subtitle}
+              projectHeroImage={idea.heroImage}
+              showProjectHeader
+            />
             <BookSheet pages={rightPages} projectTitle={idea.title} projectSubtitle={idea.subtitle} showProjectHeader={false} />
 
             {previousIdea ? (

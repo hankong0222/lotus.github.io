@@ -74,6 +74,9 @@ export default function Home() {
             <div className="max-w-2xl">
               <p className="section-kicker">Research & Explorations</p>
               <h2 className="section-title mt-4">Ongoing research, ideas, and questions shaping my work.</h2>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-[color:var(--muted)]">
+                Scroll through the list to see more notes, then click any entry to open the full detail.
+              </p>
             </div>
           </div>
           <IdeasList />
@@ -84,7 +87,7 @@ export default function Home() {
         <div className="section-shell">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="section-kicker">Thinking Preview</p>
+              <p className="section-kicker">How I Think</p>
               <h2 className="section-title mt-4">How I connect research practice, building, and teaching.</h2>
             </div>
           </div>
