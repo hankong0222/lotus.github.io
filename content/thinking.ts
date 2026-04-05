@@ -2,51 +2,161 @@ import type { Note } from "@/content/types";
 
 export const thinkingEssays: Note[] = [
   {
-    id: "research-to-product",
+    id: "data-vs-models",
     title: "Better Models Won't Fix Bad Data",
-    body: [
+    pages: [
       {
         title: "Claim",
-        content:
-          "System quality usually breaks upstream first: in data quality, signal design, labeling assumptions, and task framing, not only in model strength.",
+        body: [
+          "In many systems, performance is limited less by model architecture and more by data quality.",
+        ],
       },
       {
         title: "Why I care",
-        content:
-          "I keep returning to the idea that stronger models can amplify a system, but they rarely repair a weak foundation. Good products need better structure before bigger models.",
+        body: [
+          "Models can only learn from what they see.",
+          "If the data is noisy, incomplete, or misaligned with the task, improvements in model design often yield diminishing returns.",
+        ],
       },
-    ],
-  },
-  {
-    id: "learning-across-domains",
-    title: "Learning Across AI, Bioinformatics, and Robotics",
-    body: [
       {
-        title: "Pattern",
-        content:
-          "Working across very different domains has made me care less about surface vocabulary and more about recurring structure: signals, constraints, uncertainty, intervention, and feedback.",
+        title: "Insight",
+        body: [
+          "In trajectory prediction, unstable detections directly lead to poor reconstruction, regardless of how strong the downstream model is.",
+          "Similarly, in multimodal settings, compressed or degraded inputs can significantly affect understanding."
+        ]
       },
       {
         title: "Takeaway",
-        content:
-          "Once those patterns become visible, moving between fields feels less like switching topics and more like translating systems.",
-      },
+        body: [
+          "I tend to treat data quality and representation as first-order problems, rather than relying on increasingly complex models to compensate for weak inputs."
+        ]
+      }
     ],
   },
   {
-    id: "teaching-and-building",
-    title: "Teaching Makes Me Build Better",
-    body: [
+    id: "detection-vs-understanding",
+    title: "Detection is Easy, Understanding is Hard",
+    pages: [
       {
-        title: "Observation",
-        content:
-          "Teaching exposes where an explanation still depends on jargon, hidden assumptions, or intuition that never became explicit.",
+        title: "Claim",
+        body: [
+          "Many systems stop at detection, but real problems begin after that.",
+        ],
       },
       {
-        title: "Design consequence",
-        content:
-          "That habit carries directly into building. The more carefully I think about legibility and explanation, the better I get at shaping tools that feel understandable instead of merely functional.",
+        title: "Why",
+        body: [
+          "Detection answers what is happening, but understanding requires explaining structure, causality, and what should happen next.",
+        ],
       },
+      {
+        title: "Insight",
+        body: [
+          "In trajectory prediction, detecting the object is relatively straightforward.",
+          "The challenge lies in reconstructing motion under noise, partial observation, and physical constraints.",
+        ],
+      },
+      {
+        title: "Takeaway",
+        body: [
+          "I focus less on detecting signals, and more on modeling what they mean and how they should be used."
+        ]
+      }
+    ],
+  },
+  {
+    id: "signals-vs-decisions",
+    title: "Signals Are Not Decisions",
+    pages: [
+      {
+        title: "Claim",
+        body: [
+          "Model outputs are often treated as decisions, but they are only signals.",
+        ],
+      },
+      {
+        title: "Why",
+        body: [
+          "Predictions, scores, or classifications do not directly translate into actions.",
+          "In real systems, decisions require stability, context, and clear boundaries."
+        ],
+      },
+      {
+        title: "Insight",
+        body: [
+          "In anomaly detection, small fluctuations in scores can lead to inconsistent responses.",
+          "Without structure, the same signal may trigger different actions under similar conditions."
+        ]
+      },
+      {
+        title: "Takeaway",
+        body: [
+          "I focus on how signals are transformed into decisions — designing representations and structures that enable consistent and actionable behavior."
+        ]
+      }
+    ],
+  },
+  {
+    id: "evaluation-vs-optimization",
+    title: "Evaluation Defines What Matters",
+    pages: [
+      {
+        title: "Claim",
+        body: [
+          "A model is only as useful as how it is evaluated.",
+        ],
+      },
+      {
+        title: "Why",
+        body: [
+          "Many systems show strong performance under controlled or simulated settings, but fail to translate to real-world environments."
+        ],
+      },
+      {
+        title: "Insight",
+        body: [
+          "In studying system design and security problems, I’ve seen that results based on synthetic or simplified data often overlook the complexity of real-world behavior.",
+          "This creates a gap between reported performance and actual usability."
+        ]
+      },
+      {
+        title: "Takeaway",
+        body: [
+          "I focus on evaluation as a first-class problem — designing settings and metrics that reflect real-world conditions, not just idealized scenarios."
+        ]
+      }
+    ],
+  },
+    {
+    id: "about-dream",
+    title: "Building What I Want to See",
+    pages: [
+      {
+        title: "Claim",
+        body: [
+          "I’m driven less by outcomes, and more by the desire to build things I genuinely want to see exist.",
+        ],
+      },
+      {
+        title: "Why",
+        body: [
+          "Many of my decisions have been consistent over time, shaped by long-term interest rather than short-term goals.",
+          "I was drawn to mathematics early on, then to physics, and later to building systems — not because of external pressure, but because I found them inherently interesting."
+        ],
+      },
+      {
+        title: "Insight",
+        body: [
+          "What matters to me is not just solving predefined problems, but creating new ones — shaping directions where curiosity and structure meet.",
+          "AI, to me, is not the goal, but a set of tools that expand what I can build."
+        ]
+      },
+      {
+        title: "Takeaway",
+        body: [
+          "I’m interested in building systems that reflect both structure and creativity — where technical rigor and personal curiosity come together."
+        ]
+      }
     ],
   },
 ];

@@ -7,15 +7,6 @@ export type Project = {
   stack: string[];
 };
 
-export type Note = {
-  id: string;
-  title: string;
-  body: Array<{
-    title: string;
-    content: string;
-  }>;
-};
-
 export type IdeaListTag = "Exploring" | "In progress" | "Idea" | "Archived";
 
 export type IdeaPage = {
@@ -26,6 +17,12 @@ export type IdeaPage = {
     alt: string;
     caption?: string;
   };
+};
+
+export type Note = {
+  id: string;
+  title: string;
+  pages: IdeaPage[];
 };
 
 export type IdeaListItem = {

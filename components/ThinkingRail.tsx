@@ -175,10 +175,14 @@ function ThinkingCard({
       <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--accent-deep)] to-transparent opacity-0 transition duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
       <h3 className="thinking-rail-title">{essay.title}</h3>
       <div className="thinking-rail-summary">
-        {essay.body.map((section) => (
+        {essay.pages.map((section) => (
           <div key={section.title} className="thinking-rail-section">
             <p className="thinking-rail-section-title">{section.title}</p>
-            <p className="thinking-rail-section-content">{section.content}</p>
+            <div className="thinking-rail-section-body">
+              {section.body.map((paragraph) => (
+                <p key={paragraph} className="thinking-rail-section-content">{paragraph}</p>
+              ))}
+            </div>
           </div>
         ))}
       </div>
