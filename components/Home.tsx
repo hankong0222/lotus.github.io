@@ -2,8 +2,8 @@
 import portrait from "@/asset/half.jpg";
 import IdeasList from "@/components/IdeasList";
 import ProjectCarousel from "@/components/ProjectCarousel";
+import ThinkingRail from "@/components/ThinkingRail";
 import { featuredProjects } from "@/content/projects";
-import { thinkingEssays } from "@/content/thinking";
 
 export default function Home() {
   return (
@@ -88,19 +88,14 @@ export default function Home() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <p className="section-kicker">How I Think</p>
-              <h2 className="section-title mt-4">How I connect research practice, building, and teaching.</h2>
+              <h2 className="section-title mt-4">How I think about problems, not just solve them.</h2>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-[color:var(--muted)]">
+                Scroll sideways to browse the notes. Hover on a card to let it stretch open and reveal the full thought.
+              </p>
             </div>
           </div>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            {thinkingEssays.map((essay) => (
-              <article key={essay.id} className="glass-card rounded-[2rem] p-6">
-                <p className="text-sm text-[color:var(--muted)]">{essay.tag}</p>
-                <h3 className="mt-3 text-2xl font-semibold">{essay.title}</h3>
-                <p className="mt-4 text-sm leading-6 text-[color:var(--text-muted)]">{essay.summary}</p>
-              </article>
-            ))}
-          </div>
+          <ThinkingRail />
         </div>
       </section>
     </>

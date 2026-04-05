@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { IdeaListItem, IdeaPage } from "@/content/ideas";
+import type { IdeaListItem, IdeaPage } from "@/content/types";
 
 type IdeaBookProps = {
   accent: string;

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import IdeaBook from "@/components/IdeaBook";
-import { getIdeaBySlug, ideaListItems, ideaListTags } from "@/content/ideas";
-
+import { getIdeaBySlug, ideaListItems } from "@/content/ideas";
+import { ideaListTags } from "@/content/types";
 export function generateStaticParams() {
   return ideaListItems.map((item) => ({ slug: item.slug }));
 }

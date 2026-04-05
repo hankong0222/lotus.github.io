@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ideaListItems, ideaListTags } from "@/content/ideas";
+import {ideaListTags } from "@/content/types";
+import { ideaListItems } from "@/content/ideas";
 
 function colorForTag(tag: string) {
   return ideaListTags.find((item) => item.label === tag)?.color ?? "#94a3b8";
