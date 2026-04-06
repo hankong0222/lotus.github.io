@@ -1,24 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lotus Portfolio
+
+A Next.js portfolio site with:
+
+- a research/project homepage
+- an interactive MediaPipe hand overlay
+- gesture-based navigation
+- drawing with the index finger
+- pinch-based scrolling on the main site
+- swipe-to-flip interaction inside the idea book pages
 
 ## Getting Started
 
-First, run the development server:
+Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To create a production build:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
+
+## Hand Gestures
+
+On the main homepage:
+
+- `👋 Open palm` -> jump to Home
+- `✊ Closed fist` -> jump to About
+- `✌️ Victory` -> jump to Projects
+- `👌 OK` -> jump to Ideas
+- `👍 Thumbs up` -> jump to Thinking
+- `🤟 I love you` -> jump to Contact
+- `☝️ Index finger` -> draw colored trails
+- `🤏 Pinched index + middle fingers` -> scroll vertically
+
+On idea detail pages:
+
+- `☝️ Index finger` -> draw colored trails
+- `🤏 Pinched index + middle fingers, then swipe left/right` -> flip the book pages
+
+## Notes
+
+- The animated homepage background is a lotus bloom.
+- The site uses MediaPipe in the browser for hand tracking and gesture recognition.
+- The favicon and app icon are generated from local lotus artwork in the repo.
 
 ## GIF Conversion
 
@@ -34,32 +64,8 @@ You can also pass any other local video path:
 npm run gif -- --input .\path\to\your-demo.mp4
 ```
 
-The script will:
-
-- read the source video dimensions automatically
-- preserve aspect ratio
-- export the GIF to `asset/<input-name>.gif`
-- target a 4 second GIF by default
-- slow down videos shorter than 4 seconds
-- speed up videos longer than 4 seconds
-
 Optional flags:
 
 ```bash
 npm run gif -- --input .\asset\demo_with_prediction.mp4 --target-duration 4 --fps 15
 ```
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
