@@ -108,7 +108,7 @@ const SCRIPT_URLS = [
 const TASKS_VISION_WASM_ROOT =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm";
 const GESTURE_MODEL_ASSET_PATH =
-  "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task";
+  "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task";
 
 const MAX_SEGMENT_AGE = 3000;
 const SCROLL_SPEED_PER_SECOND = 800;
@@ -119,7 +119,7 @@ const PINCH_ENTER_SPREAD = 0.07;
 const PINCH_EXIT_SPREAD = 0.095;
 const GESTURE_STABLE_FRAMES = 8;
 const GESTURE_COOLDOWN_MS = 1400;
-const GESTURE_RECOGNITION_INTERVAL_MS = 220;
+const GESTURE_RECOGNITION_INTERVAL_MS = 260;
 
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -272,7 +272,8 @@ function navigateToGestureTarget(gesture: Exclude<GestureName, null>) {
     return;
   }
 
-  const sectionTop = section.getBoundingClientRect().top - scrollElement.getBoundingClientRect().top;
+  const sectionTop =
+    section.getBoundingClientRect().top - scrollElement.getBoundingClientRect().top;
   scrollElement.scrollTop += sectionTop;
 }
 
@@ -525,7 +526,11 @@ export default function HandPainter() {
 
       const videoTime = video.currentTime;
 
-      if (!Number.isFinite(videoTime) || videoTime <= 0 || videoTime === lastGestureVideoTimeRef.current) {
+      if (
+        !Number.isFinite(videoTime) ||
+        videoTime <= 0 ||
+        videoTime === lastGestureVideoTimeRef.current
+      ) {
         return;
       }
 
@@ -548,24 +553,11 @@ export default function HandPainter() {
       const landmarks = lastHandResultsRef.current?.multiHandLandmarks?.[0];
       const indexTip = landmarks?.[8];
       const middleTip = landmarks?.[12];
-      const pinchSpread =
-        indexTip && middleTip ? distanceBetween(indexTip, middleTip) : 0;
+      const pinchSpread = indexTip && middleTip ? distanceBetween(indexTip, middleTip) : 0;
       const isMiddleExtended =
         landmarks && landmarks[12] && landmarks[11] && landmarks[10] && landmarks[9]
           ? isFingerExtended(landmarks, 12, 11, 10, 9)
           : false;
-      const shouldPauseGestureRecognition =
-        scrollStateRef.current.pinched ||
-        (indexTip !== undefined &&
-          middleTip !== undefined &&
-          isMiddleExtended &&
-          pinchSpread <= PINCH_ENTER_SPREAD);
-
-      if (shouldPauseGestureRecognition) {
-        gestureStateRef.current.candidate = null;
-        gestureStateRef.current.stableFrames = 0;
-        return;
-      }
 
       const originalConsoleError = console.error;
 
@@ -580,9 +572,10 @@ export default function HandPainter() {
         };
 
         const gestureResults = recognizer.recognize(gestureCanvas);
-        const gesture = landmarks && isOkGesture(landmarks)
-          ? "ok"
-          : mapOfficialGesture(gestureResults.gestures?.[0]?.[0]?.categoryName);
+        const gesture =
+          landmarks && isOkGesture(landmarks)
+            ? "ok"
+            : mapOfficialGesture(gestureResults.gestures?.[0]?.[0]?.categoryName);
         void processGestureResults(gesture, pinchSpread, isMiddleExtended);
       } catch (error) {
         if (isIgnorableGestureRecognizerError(error)) {
@@ -834,10 +827,7 @@ export default function HandPainter() {
         };
 
         void processVideoFrame();
-        gestureLoopRef.current = window.setInterval(
-          runGestureRecognition,
-          GESTURE_RECOGNITION_INTERVAL_MS
-        );
+        gestureLoopRef.current = window.setInterval(runGestureRecognition, GESTURE_RECOGNITION_INTERVAL_MS);
 
         if (!isCancelled) {
           setStatus(
