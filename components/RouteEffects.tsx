@@ -8,13 +8,9 @@ export default function RouteEffects() {
   const pathname = usePathname();
   const isIdeaDetail = pathname.startsWith("/ideas/");
 
-  if (isIdeaDetail) {
-    return null;
-  }
-
   return (
     <>
-      <ParticleField />
+      {isIdeaDetail ? null : <ParticleField />}
       <HandPainter />
     </>
   );

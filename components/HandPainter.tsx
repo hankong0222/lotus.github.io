@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Point = {
   x: number;
@@ -57,6 +58,8 @@ type DebugState = {
   gesture: GestureName;
 };
 
+type IdeaBookSwipeDirection = "left" | "right";
+
 type VisionModule = {
   FilesetResolver: {
     forVisionTasks: (wasmRoot: string) => Promise<unknown>;
@@ -77,6 +80,10 @@ type VisionModule = {
 };
 
 declare global {
+  interface WindowEventMap {
+    "idea-book-swipe": CustomEvent<{ direction: IdeaBookSwipeDirection }>;
+  }
+
   interface Window {
     HAND_CONNECTIONS?: Array<[number, number]>;
     Hands?: new (config: { locateFile: (file: string) => string }) => {
@@ -120,6 +127,10 @@ const PINCH_EXIT_SPREAD = 0.095;
 const GESTURE_STABLE_FRAMES = 8;
 const GESTURE_COOLDOWN_MS = 1400;
 const GESTURE_RECOGNITION_INTERVAL_MS = 260;
+const IDEA_BOOK_SWIPE_LEFT_THRESHOLD = -20;
+const IDEA_BOOK_SWIPE_RIGHT_THRESHOLD = 20;
+const IDEA_BOOK_SWIPE_MAX_VERTICAL_DRIFT = 24;
+const IDEA_BOOK_SWIPE_COOLDOWN_MS = 500;
 
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -173,6 +184,38 @@ function projectLandmark(landmark: Landmark, width: number, height: number): Poi
     x: (1 - landmark.x) * width,
     y: landmark.y * height,
   };
+}
+
+function projectAverageLandmark(
+  landmarks: Landmark[],
+  indices: number[],
+  width: number,
+  height: number
+) {
+  const valid = indices.map((index) => landmarks[index]).filter(Boolean) as Landmark[];
+
+  if (valid.length === 0) {
+    return null;
+  }
+
+  const average = valid.reduce(
+    (acc, point) => ({
+      x: acc.x + point.x,
+      y: acc.y + point.y,
+      z: acc.z + point.z,
+    }),
+    { x: 0, y: 0, z: 0 }
+  );
+
+  return projectLandmark(
+    {
+      x: average.x / valid.length,
+      y: average.y / valid.length,
+      z: average.z / valid.length,
+    },
+    width,
+    height
+  );
 }
 
 function distanceBetween(a: Landmark, b: Landmark) {
@@ -305,6 +348,10 @@ function waitForVideoReady(video: HTMLVideoElement) {
 }
 
 export default function HandPainter() {
+  const pathname = usePathname();
+  const isIdeaDetail = pathname.startsWith("/ideas/");
+  const isIdeaDetailRef = useRef(isIdeaDetail);
+  isIdeaDetailRef.current = isIdeaDetail;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gestureCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -330,6 +377,7 @@ export default function HandPainter() {
   const lastDrawPointRef = useRef<Point | null>(null);
   const lastPinchCenterRef = useRef<Point | null>(null);
   const filteredPinchCenterRef = useRef<Point | null>(null);
+  const lastIdeaBookSwipeAtRef = useRef(0);
   const gestureStateRef = useRef<{
     candidate: GestureName;
     stableFrames: number;
@@ -394,7 +442,7 @@ export default function HandPainter() {
       ctx.clearRect(0, 0, width, height);
 
       const scrollState = scrollStateRef.current;
-      if (scrollState.pinched && scrollState.direction !== 0 && deltaSeconds > 0) {
+      if (!isIdeaDetailRef.current && scrollState.pinched && scrollState.direction !== 0 && deltaSeconds > 0) {
         const scrollElement =
           document.getElementById("app-scroll-root") ??
           document.scrollingElement ??
@@ -515,6 +563,7 @@ export default function HandPainter() {
       const gestureCanvas = gestureCanvasRef.current;
 
       if (
+        isIdeaDetailRef.current ||
         !video ||
         !recognizer ||
         recognizerMutedRef.current ||
@@ -558,6 +607,10 @@ export default function HandPainter() {
         landmarks && landmarks[12] && landmarks[11] && landmarks[10] && landmarks[9]
           ? isFingerExtended(landmarks, 12, 11, 10, 9)
           : false;
+
+      if (isIdeaDetailRef.current) {
+        return;
+      }
 
       const originalConsoleError = console.error;
 
@@ -658,16 +711,24 @@ export default function HandPainter() {
         width,
         height
       );
+      const rawIdeaSwipeCenter =
+        projectAverageLandmark(landmarks, [0, 5, 9, 13, 17], width, height) ?? rawPinchCenter;
       const pinchCenter = filteredPinchCenterRef.current
         ? {
             x:
               filteredPinchCenterRef.current.x +
-              (rawPinchCenter.x - filteredPinchCenterRef.current.x) * PINCH_CENTER_SMOOTHING,
+              ((isIdeaDetailRef.current ? rawIdeaSwipeCenter.x : rawPinchCenter.x) -
+                filteredPinchCenterRef.current.x) *
+                PINCH_CENTER_SMOOTHING,
             y:
               filteredPinchCenterRef.current.y +
-              (rawPinchCenter.y - filteredPinchCenterRef.current.y) * PINCH_CENTER_SMOOTHING,
+              ((isIdeaDetailRef.current ? rawIdeaSwipeCenter.y : rawPinchCenter.y) -
+                filteredPinchCenterRef.current.y) *
+                PINCH_CENTER_SMOOTHING,
           }
-        : rawPinchCenter;
+        : isIdeaDetailRef.current
+          ? rawIdeaSwipeCenter
+          : rawPinchCenter;
       filteredPinchCenterRef.current = pinchCenter;
 
       const pinchSpread = distanceBetween(indexTip, middleTip);
@@ -695,16 +756,73 @@ export default function HandPainter() {
 
       scrollStateRef.current.pinched = true;
       let deltaY = 0;
+      let deltaX = 0;
 
       if (lastPinchCenterRef.current) {
+        deltaX = pinchCenter.x - lastPinchCenterRef.current.x;
         deltaY = pinchCenter.y - lastPinchCenterRef.current.y;
 
+        const canSwipeIdeaBook =
+          isIdeaDetailRef.current &&
+          Math.abs(deltaY) <= IDEA_BOOK_SWIPE_MAX_VERTICAL_DRIFT &&
+          performance.now() - lastIdeaBookSwipeAtRef.current >= IDEA_BOOK_SWIPE_COOLDOWN_MS;
+
+        if (canSwipeIdeaBook && deltaX <= IDEA_BOOK_SWIPE_LEFT_THRESHOLD) {
+          window.dispatchEvent(
+            new CustomEvent("idea-book-swipe", {
+              detail: {
+                direction: "left",
+              },
+            })
+          );
+          lastIdeaBookSwipeAtRef.current = performance.now();
+          scrollStateRef.current.pinched = false;
+          scrollStateRef.current.direction = 0;
+          lastPinchCenterRef.current = null;
+          filteredPinchCenterRef.current = null;
+          setDebug((prev) => ({
+            ...prev,
+            pinchSpread,
+            deltaY,
+            direction: 0,
+            pinched: false,
+            middleExtended: isMiddleExtended,
+          }));
+          return;
+        }
+
+        if (canSwipeIdeaBook && deltaX >= IDEA_BOOK_SWIPE_RIGHT_THRESHOLD) {
+          window.dispatchEvent(
+            new CustomEvent("idea-book-swipe", {
+              detail: {
+                direction: "right",
+              },
+            })
+          );
+          lastIdeaBookSwipeAtRef.current = performance.now();
+          scrollStateRef.current.pinched = false;
+          scrollStateRef.current.direction = 0;
+          lastPinchCenterRef.current = null;
+          filteredPinchCenterRef.current = null;
+          setDebug((prev) => ({
+            ...prev,
+            pinchSpread,
+            deltaY,
+            direction: 0,
+            pinched: false,
+            middleExtended: isMiddleExtended,
+          }));
+          return;
+        }
+
         if (
+          !isIdeaDetailRef.current &&
           scrollStateRef.current.direction === 0 &&
           Math.abs(deltaY) >= SCROLL_START_DELTA
         ) {
           scrollStateRef.current.direction = deltaY > 0 ? 1 : -1;
         } else if (
+          !isIdeaDetailRef.current &&
           scrollStateRef.current.direction !== 0 &&
           Math.sign(deltaY) !== scrollStateRef.current.direction &&
           Math.abs(deltaY) >= SCROLL_SWITCH_DELTA
@@ -726,9 +844,12 @@ export default function HandPainter() {
 
     const setup = async () => {
       try {
-        await Promise.all([...SCRIPT_URLS.map((url) => loadScript(url)), loadTasksVision()]);
+        await Promise.all([
+          ...SCRIPT_URLS.map((url) => loadScript(url)),
+          ...(isIdeaDetailRef.current ? [] : [loadTasksVision()]),
+        ]);
 
-        if (isCancelled || !window.Hands || !window.__mpVision) {
+        if (isCancelled || !window.Hands || (!isIdeaDetailRef.current && !window.__mpVision)) {
           return;
         }
 
@@ -754,32 +875,34 @@ export default function HandPainter() {
         hands.onResults(processHandResults);
         handsRef.current = hands;
 
-        const vision = await window.__mpVision.FilesetResolver.forVisionTasks(
-          TASKS_VISION_WASM_ROOT
-        );
-        const recognizer = await window.__mpVision.GestureRecognizer.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: GESTURE_MODEL_ASSET_PATH,
-            delegate: "CPU",
-          },
-          runningMode: "IMAGE",
-          numHands: 1,
-          minHandDetectionConfidence: 0.55,
-          minHandPresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-          cannedGesturesClassifierOptions: {
-            categoryAllowlist: [
-              "Open_Palm",
-              "Closed_Fist",
-              "Victory",
-              "Thumb_Up",
-              "ILoveYou",
-            ],
-            scoreThreshold: 0.55,
-          },
-        });
+        if (!isIdeaDetailRef.current && window.__mpVision) {
+          const vision = await window.__mpVision.FilesetResolver.forVisionTasks(
+            TASKS_VISION_WASM_ROOT
+          );
+          const recognizer = await window.__mpVision.GestureRecognizer.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: GESTURE_MODEL_ASSET_PATH,
+              delegate: "CPU",
+            },
+            runningMode: "IMAGE",
+            numHands: 1,
+            minHandDetectionConfidence: 0.55,
+            minHandPresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+            cannedGesturesClassifierOptions: {
+              categoryAllowlist: [
+                "Open_Palm",
+                "Closed_Fist",
+                "Victory",
+                "Thumb_Up",
+                "ILoveYou",
+              ],
+              scoreThreshold: 0.55,
+            },
+          });
 
-        recognizerRef.current = recognizer;
+          recognizerRef.current = recognizer;
+        }
         fitCanvas();
         animationFrameRef.current = window.requestAnimationFrame(drawFrame);
 
@@ -827,11 +950,18 @@ export default function HandPainter() {
         };
 
         void processVideoFrame();
-        gestureLoopRef.current = window.setInterval(runGestureRecognition, GESTURE_RECOGNITION_INTERVAL_MS);
+        if (!isIdeaDetailRef.current) {
+          gestureLoopRef.current = window.setInterval(
+            runGestureRecognition,
+            GESTURE_RECOGNITION_INTERVAL_MS
+          );
+        }
 
         if (!isCancelled) {
           setStatus(
-            "Gestures: 👋 Home, ✊ About, ✌️ Projects, 👌 Ideas, 👍 Thinking, 🤟 Contact. ☝️ Draw with index finger & Pinched index + middle fingers scroll."
+            isIdeaDetailRef.current
+              ? "📖 Idea book: ☝️ Draw with index finger. 🤏 Pinch index + middle fingers, then swipe left/right to flip pages."
+              : "Gestures: 👋 Home, ✊ About, ✌️ Projects, 👌 Ideas, 👍 Thinking, 🤟 Contact. ☝️ Draw with index finger & Pinched index + middle fingers scroll. 🌸 The animated background is a lotus bloom."
           );
         }
       } catch (error) {
@@ -880,6 +1010,7 @@ export default function HandPainter() {
       };
       recognizerMutedRef.current = false;
       isSendingHandsRef.current = false;
+      lastIdeaBookSwipeAtRef.current = 0;
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
 
@@ -905,8 +1036,9 @@ export default function HandPainter() {
       <video ref={videoRef} className="hidden" playsInline muted />
       <canvas ref={canvasRef} className="hand-painter-layer" />
       <div className="hand-painter-hud">
-        <p className="hand-painter-kicker">MediaPipe</p>
+        <p className="hand-painter-kicker">Vision Instruction</p>
         <p className="hand-painter-copy">{status}</p>
+        {/*
         <p className="hand-painter-copy">
           spread {debug.pinchSpread.toFixed(3)} | dy {debug.deltaY.toFixed(2)} | dir{" "}
           {debug.direction}
@@ -915,6 +1047,7 @@ export default function HandPainter() {
           pinch {debug.pinched ? "on" : "off"} | middle {debug.middleExtended ? "up" : "down"}
         </p>
         <p className="hand-painter-copy">gesture {debug.gesture ?? "none"}</p>
+        */}
       </div>
     </>
   );

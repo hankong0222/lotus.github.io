@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { IdeaListItem, IdeaPage } from "@/content/types";
 
 type IdeaBookProps = {
@@ -11,21 +13,32 @@ type IdeaBookProps = {
   nextIdea: IdeaListItem | null;
 };
 
+function splitIdeaPages(item: IdeaListItem) {
+  const midpoint = Math.ceil(item.pages.length / 2);
+
+  return {
+    leftPages: item.pages.slice(0, midpoint),
+    rightPages: item.pages.slice(midpoint),
+  };
+}
+
 function BookSheet({
   pages,
   projectTitle,
   projectSubtitle,
   projectHeroImage,
   showProjectHeader,
+  className,
 }: {
   pages: IdeaPage[];
   projectTitle: string;
   projectSubtitle?: string;
   projectHeroImage?: IdeaListItem["heroImage"];
   showProjectHeader: boolean;
+  className?: string;
 }) {
   return (
-    <article className="idea-book-page">
+    <article className={`idea-book-page${className ? ` ${className}` : ""}`}>
       {showProjectHeader ? (
         <header className="idea-book-project-header">
           <h1 className="idea-book-title">{projectTitle}</h1>
@@ -77,9 +90,58 @@ function BookSheet({
 }
 
 export default function IdeaBook({ accent, idea, previousIdea, nextIdea }: IdeaBookProps) {
-  const midpoint = Math.ceil(idea.pages.length / 2);
-  const leftPages = idea.pages.slice(0, midpoint);
-  const rightPages = idea.pages.slice(midpoint);
+  const router = useRouter();
+  const [flipDirection, setFlipDirection] = useState<"forward" | "backward" | null>(null);
+  const { leftPages, rightPages } = splitIdeaPages(idea);
+  const isFlipping = flipDirection !== null;
+
+  const flipTarget = useMemo(() => {
+    if (flipDirection === "forward") {
+      return nextIdea;
+    }
+
+    if (flipDirection === "backward") {
+      return previousIdea;
+    }
+
+    return null;
+  }, [flipDirection, nextIdea, previousIdea]);
+
+  const flipTargetPages = useMemo(() => {
+    if (!flipTarget) {
+      return null;
+    }
+
+    return splitIdeaPages(flipTarget);
+  }, [flipTarget]);
+
+  const triggerFlip = useCallback((target: IdeaListItem | null, direction: "forward" | "backward") => {
+    if (!target || isFlipping) {
+      return;
+    }
+
+    setFlipDirection(direction);
+
+    window.setTimeout(() => {
+      router.push(`/ideas/${target.slug}`);
+    }, 760);
+  }, [isFlipping, router]);
+
+  useEffect(() => {
+    const handleIdeaBookSwipe = (event: WindowEventMap["idea-book-swipe"]) => {
+      if (event.detail.direction === "left") {
+        triggerFlip(nextIdea, "forward");
+        return;
+      }
+
+      triggerFlip(previousIdea, "backward");
+    };
+
+    window.addEventListener("idea-book-swipe", handleIdeaBookSwipe);
+    return () => {
+      window.removeEventListener("idea-book-swipe", handleIdeaBookSwipe);
+    };
+  }, [nextIdea, previousIdea, triggerFlip]);
 
   return (
     <main className="idea-book-shell px-4 py-8 md:py-12">
@@ -107,29 +169,100 @@ export default function IdeaBook({ accent, idea, previousIdea, nextIdea }: IdeaB
 
         <div className="idea-book-stage">
           <div className="idea-book-shadow" />
-          <div className="idea-book-spread">
+          <div className={`idea-book-spread${isFlipping ? " idea-book-spread-flipping" : ""}`}>
+            {flipDirection === "backward" && flipTarget && flipTargetPages ? (
+              <div className="idea-book-underlay idea-book-underlay-left idea-book-underlay-reveal" aria-hidden="true">
+                <BookSheet
+                  pages={flipTargetPages.leftPages}
+                  projectTitle={flipTarget.title}
+                  projectSubtitle={flipTarget.subtitle}
+                  projectHeroImage={flipTarget.heroImage}
+                  showProjectHeader
+                />
+              </div>
+            ) : null}
+
+            {flipDirection === "forward" && flipTarget && flipTargetPages ? (
+              <div className="idea-book-underlay idea-book-underlay-right idea-book-underlay-reveal" aria-hidden="true">
+                <BookSheet
+                  pages={flipTargetPages.rightPages}
+                  projectTitle={flipTarget.title}
+                  projectSubtitle={flipTarget.subtitle}
+                  showProjectHeader={false}
+                />
+              </div>
+            ) : null}
+
             <BookSheet
               pages={leftPages}
               projectTitle={idea.title}
               projectSubtitle={idea.subtitle}
               projectHeroImage={idea.heroImage}
               showProjectHeader
+              className={flipDirection === "backward" ? "idea-book-page-hidden" : undefined}
             />
-            <BookSheet pages={rightPages} projectTitle={idea.title} projectSubtitle={idea.subtitle} showProjectHeader={false} />
+            <BookSheet
+              pages={rightPages}
+              projectTitle={idea.title}
+              projectSubtitle={idea.subtitle}
+              showProjectHeader={false}
+              className={flipDirection === "forward" ? "idea-book-page-hidden" : undefined}
+            />
+
+            {flipDirection === "backward" ? (
+              <div className="idea-book-flip-layer idea-book-flip-layer-backward" aria-hidden="true">
+                <div className="idea-book-flip-face idea-book-flip-face-front">
+                  <BookSheet
+                    pages={leftPages}
+                    projectTitle={idea.title}
+                    projectSubtitle={idea.subtitle}
+                    projectHeroImage={idea.heroImage}
+                    showProjectHeader
+                  />
+                </div>
+                <div className="idea-book-flip-face idea-book-flip-face-back">
+                  <BookSheet
+                    pages={flipTargetPages?.rightPages ?? rightPages}
+                    projectTitle={flipTarget?.title ?? idea.title}
+                    projectSubtitle={flipTarget?.subtitle}
+                    showProjectHeader={false}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {flipDirection === "forward" ? (
+              <div className="idea-book-flip-layer idea-book-flip-layer-forward" aria-hidden="true">
+                <div className="idea-book-flip-face idea-book-flip-face-front">
+                  <BookSheet pages={rightPages} projectTitle={idea.title} projectSubtitle={idea.subtitle} showProjectHeader={false} />
+                </div>
+                <div className="idea-book-flip-face idea-book-flip-face-back">
+                  <BookSheet
+                    pages={flipTargetPages?.leftPages ?? leftPages}
+                    projectTitle={flipTarget?.title ?? idea.title}
+                    projectSubtitle={flipTarget?.subtitle}
+                    projectHeroImage={flipTarget?.heroImage}
+                    showProjectHeader
+                  />
+                </div>
+              </div>
+            ) : null}
 
             {previousIdea ? (
-              <Link
-                href={`/ideas/${previousIdea.slug}`}
+              <button
+                type="button"
                 className="idea-book-corner-hitarea idea-book-corner-hitarea-left"
                 aria-label="Turn to previous project"
+                onClick={() => triggerFlip(previousIdea, "backward")}
               />
             ) : null}
 
             {nextIdea ? (
-              <Link
-                href={`/ideas/${nextIdea.slug}`}
+              <button
+                type="button"
                 className="idea-book-corner-hitarea idea-book-corner-hitarea-right"
                 aria-label="Turn to next project"
+                onClick={() => triggerFlip(nextIdea, "forward")}
               />
             ) : null}
           </div>
@@ -138,10 +271,14 @@ export default function IdeaBook({ accent, idea, previousIdea, nextIdea }: IdeaB
         <div className="idea-book-footer">
           <div className="idea-book-nav idea-book-nav-left">
             {previousIdea ? (
-              <Link href={`/ideas/${previousIdea.slug}`} className="idea-book-nav-button glass-card rounded-[1.6rem] px-5 py-4">
+              <button
+                type="button"
+                onClick={() => triggerFlip(previousIdea, "backward")}
+                className="idea-book-nav-button glass-card rounded-[1.6rem] px-5 py-4"
+              >
                 <span className="idea-book-nav-label text-[color:var(--muted)]">Previous project</span>
                 <span className="idea-book-nav-title text-[color:var(--foreground)]">{previousIdea.title}</span>
-              </Link>
+              </button>
             ) : (
               <div className="idea-book-nav-button idea-book-nav-button-disabled glass-card rounded-[1.6rem] px-5 py-4">
                 <span className="idea-book-nav-label text-[color:var(--muted)]">Previous</span>
@@ -154,10 +291,14 @@ export default function IdeaBook({ accent, idea, previousIdea, nextIdea }: IdeaB
 
           <div className="idea-book-nav idea-book-nav-right">
             {nextIdea ? (
-              <Link href={`/ideas/${nextIdea.slug}`} className="idea-book-nav-button glass-card rounded-[1.6rem] px-5 py-4">
+              <button
+                type="button"
+                onClick={() => triggerFlip(nextIdea, "forward")}
+                className="idea-book-nav-button glass-card rounded-[1.6rem] px-5 py-4"
+              >
                 <span className="idea-book-nav-label text-[color:var(--muted)]">Next project</span>
                 <span className="idea-book-nav-title text-[color:var(--foreground)]">{nextIdea.title}</span>
-              </Link>
+              </button>
             ) : (
               <div className="idea-book-nav-button idea-book-nav-button-disabled glass-card rounded-[1.6rem] px-5 py-4">
                 <span className="idea-book-nav-label text-[color:var(--muted)]">Next</span>
